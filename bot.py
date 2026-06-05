@@ -12,9 +12,32 @@ CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", "60"))
 # ──────────────────────────────────────────────────────
 
 def get_price(symbol):
-    url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
-    r = requests.get(url, timeout=10)
-    return float(r.json()["price"])
+    # Try Binance first
+    try:
+        url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+        r = requests.get(url, timeout=10)
+        data = r.json()
+        if "price" in data:
+            return float(data["price"])
+    except Exception:
+        pass
+
+    # Fallback: CoinGecko (no geo restrictions)
+    coin_map = {
+        "ZECUSDT": "zcash",
+        "BTCUSDT": "bitcoin",
+        "ETHUSDT": "ethereum",
+        "SOLUSDT": "solana",
+        "BNBUSDT": "binancecoin",
+        "WLDUSDT": "worldcoin-wld",
+    }
+    coin_id = coin_map.get(symbol.upper(), symbol.lower().replace("usdt", ""))
+    url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd"
+    r = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
+    data = r.json()
+    if coin_id in data:
+        return float(data[coin_id]["usd"])
+    raise Exception(f"Price not found for {symbol}")
 
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
