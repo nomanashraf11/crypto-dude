@@ -1,0 +1,16 @@
+[
+  {
+    "coin": "ZEC",
+    "symbol": "ZECUSDT",
+    "price": 200,
+    "direction": "below",
+    "note": "ZEC long entry zone — ask Claude for analysis"
+  },
+  {
+    "coin": "BTC",
+    "symbol": "BTCUSDT",
+    "price": 60601,
+    "direction": "below",
+    "note": "BTC weekly BB lower — potential long zone"
+  }
+]
