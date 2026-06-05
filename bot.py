@@ -12,32 +12,47 @@ CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", "60"))
 # ──────────────────────────────────────────────────────
 
 def get_price(symbol):
-    # Try Binance first
+    coin = symbol.upper().replace("USDT", "")
+
+    # 1. Binance
     try:
-        url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
-        r = requests.get(url, timeout=10)
+        r = requests.get(f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}", timeout=10)
         data = r.json()
         if "price" in data:
             return float(data["price"])
     except Exception:
         pass
 
-    # Fallback: CoinGecko (no geo restrictions)
-    coin_map = {
-        "ZECUSDT": "zcash",
-        "BTCUSDT": "bitcoin",
-        "ETHUSDT": "ethereum",
-        "SOLUSDT": "solana",
-        "BNBUSDT": "binancecoin",
-        "WLDUSDT": "worldcoin-wld",
-    }
-    coin_id = coin_map.get(symbol.upper(), symbol.lower().replace("usdt", ""))
-    url = f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd"
-    r = requests.get(url, timeout=10, headers={"User-Agent": "Mozilla/5.0"})
-    data = r.json()
-    if coin_id in data:
-        return float(data[coin_id]["usd"])
-    raise Exception(f"Price not found for {symbol}")
+    # 2. CryptoCompare (very reliable, no geo block)
+    try:
+        r = requests.get(
+            f"https://min-api.cryptocompare.com/data/price?fsym={coin}&tsyms=USD",
+            timeout=10, headers={"User-Agent": "Mozilla/5.0"}
+        )
+        data = r.json()
+        if "USD" in data:
+            return float(data["USD"])
+    except Exception:
+        pass
+
+    # 3. CoinGecko fallback
+    try:
+        coin_map = {
+            "BTC": "bitcoin", "ETH": "ethereum", "SOL": "solana",
+            "ZEC": "zcash", "BNB": "binancecoin", "WLD": "worldcoin-wld",
+        }
+        coin_id = coin_map.get(coin, coin.lower())
+        r = requests.get(
+            f"https://api.coingecko.com/api/v3/simple/price?ids={coin_id}&vs_currencies=usd",
+            timeout=10, headers={"User-Agent": "Mozilla/5.0"}
+        )
+        data = r.json()
+        if coin_id in data:
+            return float(data[coin_id]["usd"])
+    except Exception:
+        pass
+
+    raise Exception(f"All sources failed for {symbol}")
 
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
