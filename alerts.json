@@ -1,16 +1,23 @@
 [
   {
-    "coin": "ZEC",
-    "symbol": "ZECUSDT",
-    "price": 200,
-    "direction": "below",
-    "note": "ZEC long entry zone — ask Claude for analysis"
+    "coin": "ENA",
+    "symbol": "ENAUSDT",
+    "price": 0.099,
+    "direction": "above",
+    "note": "ENA approaching $0.100 resistance — validate short setup before entering"
   },
   {
-    "coin": "BTC",
-    "symbol": "BTCUSDT",
-    "price": 60601,
+    "coin": "ETH",
+    "symbol": "ETHUSDT",
+    "price": 1488,
     "direction": "below",
-    "note": "BTC weekly BB lower — potential long zone"
+    "note": "ETH SL HIT — exit immediately. Entry $1,540, SL $1,488 breached."
+  },
+  {
+    "coin": "ETH",
+    "symbol": "ETHUSDT",
+    "price": 1645,
+    "direction": "above",
+    "note": "ETH TP HIT — take profit at $1,645. Entry $1,540, full target reached."
   }
 ]
