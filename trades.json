@@ -16,5 +16,23 @@
     "result": "WIN",
     "mistakes": null,
     "close_note": "exited early, missed 0.0967 move"
+  },
+  {
+    "id": 2,
+    "symbol": "ETHUSDT",
+    "direction": "long",
+    "entry": 1540.0,
+    "sl": 1488.0,
+    "tp": 1590.0,
+    "rr": 0.96,
+    "open_time": "2026-06-06T18:06:33.045108",
+    "note": "liq grab weekly support, liq cascade confirmed",
+    "status": "closed",
+    "exit": 1590.0,
+    "exit_time": "2026-06-06T18:06:33.063199",
+    "pnl_pct": 3.25,
+    "result": "WIN",
+    "mistakes": null,
+    "close_note": "short squeeze hit TP perfectly"
   }
 ]
