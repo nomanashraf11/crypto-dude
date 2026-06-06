@@ -10,8 +10,8 @@ COMMANDS:
   stats                                        — win rate, avg P&L, mistakes
 
 EXAMPLES:
-  python3 trade_log.py open ENAUSDT long 0.087 0.079 0.108 "friend signal validated"
-  python3 trade_log.py open ETHUSDT long 1540 1488 1590 "liq grab at weekly support"
+  python3 trade_log.py open ENAUSDT long 0.087 0.079 0.108 20000 "friend signal validated"
+  python3 trade_log.py open ETHUSDT long 1540 1488 1590 2.75 "liq grab at weekly support"
   python3 trade_log.py close 1590 "hit TP, short squeeze played out"
   python3 trade_log.py close 1488 "SL hit, cascade continued"
   python3 trade_log.py view
@@ -45,7 +45,7 @@ def open_trade(args):
         return
 
     if len(args) < 5:
-        print("Usage: open SYMBOL DIRECTION ENTRY SL TP [note]")
+        print("Usage: open SYMBOL DIRECTION ENTRY SL TP [SIZE] [note]")
         return
 
     symbol    = args[0].upper()
@@ -53,7 +53,17 @@ def open_trade(args):
     entry     = float(args[2])
     sl        = float(args[3])
     tp        = float(args[4])
-    note      = " ".join(args[5:]) if len(args) > 5 else ""
+
+    # 6th arg: size (numeric) or start of note
+    size = None
+    note_start = 5
+    if len(args) > 5:
+        try:
+            size = float(args[5])
+            note_start = 6
+        except ValueError:
+            pass
+    note = " ".join(args[note_start:]) if len(args) > note_start else ""
 
     risk      = abs(entry - sl)
     reward    = abs(tp - entry)
@@ -67,14 +77,16 @@ def open_trade(args):
         "sl":        sl,
         "tp":        tp,
         "rr":        rr,
+        "size":      size,
         "open_time": datetime.now().isoformat(),
         "note":      note,
         "status":    "open",
         "exit":      None,
         "exit_time": None,
         "pnl_pct":   None,
+        "pnl_usd":   None,
+        "pnl_eur":   None,
         "result":    None,
-        "mistakes":  None,
         "close_note": None,
     }
 
@@ -111,11 +123,27 @@ def close_trade(args):
     else:
         pnl_pct = round((entry - exit_price) / entry * 100, 2)
 
+    # calculate actual USD and EUR P&L if size is known
+    pnl_usd = pnl_eur = None
+    if trade.get("size"):
+        multiplier = 1 if trade["direction"] == "long" else -1
+        pnl_usd = round((exit_price - entry) * trade["size"] * multiplier, 2)
+        try:
+            with __import__("urllib.request", fromlist=["urlopen"]).urlopen(
+                "https://api.frankfurter.app/latest?from=USD&to=EUR", timeout=5
+            ) as r:
+                eur_rate = __import__("json").load(r)["rates"]["EUR"]
+            pnl_eur = round(pnl_usd * eur_rate, 2)
+        except Exception:
+            pnl_eur = round(pnl_usd / 1.08, 2)  # fallback rate
+
     result = "WIN" if pnl_pct > 0 else "LOSS" if pnl_pct < 0 else "BREAKEVEN"
 
     trade["exit"]       = exit_price
     trade["exit_time"]  = datetime.now().isoformat()
     trade["pnl_pct"]    = pnl_pct
+    trade["pnl_usd"]    = pnl_usd
+    trade["pnl_eur"]    = pnl_eur
     trade["result"]     = result
     trade["close_note"] = note
     trade["status"]     = "closed"
@@ -125,7 +153,10 @@ def close_trade(args):
     print(f"  {'✅' if pnl_pct > 0 else '❌'} Trade #{trade['id']} CLOSED — {result}")
     print(f"  {trade['symbol']} {trade['direction'].upper()}")
     print(f"  Entry: ${entry}  →  Exit: ${exit_price}")
-    print(f"  P&L: {'+' if pnl_pct >= 0 else ''}{pnl_pct}%")
+    print(f"  P&L: {'+' if pnl_pct >= 0 else ''}{pnl_pct}%", end="")
+    if pnl_usd is not None:
+        print(f"  |  {'+'if pnl_usd>=0 else ''}${pnl_usd}  |  {'+'if pnl_eur>=0 else ''}€{pnl_eur}", end="")
+    print()
     if note:
         print(f"  Note: {note}")
     print(f"{'─'*50}")

@@ -34,5 +34,25 @@
     "result": "WIN",
     "mistakes": null,
     "close_note": "short squeeze hit TP perfectly"
+  },
+  {
+    "id": 3,
+    "symbol": "ETHUSDT",
+    "direction": "long",
+    "entry": 1540.0,
+    "sl": 1488.0,
+    "tp": 1590.0,
+    "rr": 0.96,
+    "size": 2.75,
+    "open_time": "2026-06-06T18:10:34.364872",
+    "note": "liq grab weekly support short squeeze",
+    "status": "closed",
+    "exit": 1590.0,
+    "exit_time": "2026-06-06T18:10:34.937107",
+    "pnl_pct": 3.25,
+    "pnl_usd": 137.5,
+    "pnl_eur": 127.31,
+    "result": "WIN",
+    "close_note": "short squeeze hit TP"
   }
 ]
