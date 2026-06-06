@@ -9,15 +9,22 @@
   {
     "coin": "ETH",
     "symbol": "ETHUSDT",
-    "price": 1488,
+    "price": 1550,
     "direction": "below",
-    "note": "ETH SL HIT — exit immediately. Entry $1,540, SL $1,488 breached."
+    "note": "ETH pulling back toward entry — price dropping. Exit manually NOW to lock profit. Don't let winner turn to loser."
   },
   {
     "coin": "ETH",
     "symbol": "ETHUSDT",
-    "price": 1645,
+    "price": 1488,
+    "direction": "below",
+    "note": "ETH SL HIT — exit immediately. Trade over."
+  },
+  {
+    "coin": "ETH",
+    "symbol": "ETHUSDT",
+    "price": 1590,
     "direction": "above",
-    "note": "ETH TP HIT — take profit at $1,645. Entry $1,540, full target reached."
+    "note": "ETH TP HIT at $1,590 — EXIT FULL POSITION NOW. Short squeeze peak. Don't wait."
   }
 ]
