@@ -175,9 +175,11 @@ def edit_tp(order_id, size, stop_price):
 def edit_sl(order_id, size, stop_price):
     """Edit SL order — stop-market, no limitPrice = guaranteed fill."""
     result = api("POST", "/derivatives/api/v3/editorder", {
-        "orderId":    order_id,
-        "size":       size,
-        "stopPrice":  stop_price,
+        "orderId":       order_id,
+        "size":          size,
+        "stopPrice":     stop_price,
+        "triggerSignal": "mark",
+        "reduceOnly":    True,
     })
     return result.get("editStatus", {}).get("status", "?")
 
