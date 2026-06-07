@@ -196,8 +196,13 @@ if __name__ == "__main__":
         elif cmd == "list":
             list_alerts()
         elif cmd == "test":
-            print("Sending test message...")
+            print("Sending test messages...")
             send_telegram("✅ Bot test successful! Alerts are working.")
+            send_pushover(
+                title="🔔 TEST ALERT",
+                message="Pushover is working! You will hear this when a price alert fires.",
+                priority=2
+            )
             print("Done.")
         elif cmd == "remove":
             idx = int(sys.argv[2]) - 1
