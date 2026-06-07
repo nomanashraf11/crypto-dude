@@ -56,18 +56,22 @@ def get_price(symbol):
 
     raise Exception(f"All sources failed for {symbol}")
 
-def send_pushover(title, message, priority=1):
+def send_pushover(title, message, priority=2):
     if not PUSHOVER_TOKEN or not PUSHOVER_USER:
         return
     try:
-        requests.post("https://api.pushover.net/1/messages.json", data={
+        payload = {
             "token":    PUSHOVER_TOKEN,
             "user":     PUSHOVER_USER,
             "title":    title,
             "message":  message,
-            "priority": priority,  # 1 = high priority (bypasses quiet hours), 2 = requires ack
+            "priority": priority,
             "sound":    "siren",
-        }, timeout=10)
+        }
+        if priority == 2:
+            payload["retry"]  = 30   # ring again every 30s
+            payload["expire"] = 300  # stop after 5 minutes if not acknowledged
+        requests.post("https://api.pushover.net/1/messages.json", data=payload, timeout=10)
     except Exception as e:
         print(f"Pushover error: {e}")
 
