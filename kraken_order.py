@@ -139,16 +139,15 @@ def resolve_price(arg, current, label):
         return float(arg)
 
 def place_tp(symbol, size, price):
-    """Place a new take-profit-market order (for additional TP levels)."""
+    """Place a limit sell order at TP price (closes portion of long position)."""
     result = api("POST", "/derivatives/api/v3/sendorder", {
-        "orderType": "take_profit_market",
-        "symbol":    symbol,
-        "side":      "sell",
-        "size":      size,
-        "stopPrice": price,
-        "triggerSignal": "mark",
+        "orderType":  "lmt",
+        "symbol":     symbol,
+        "side":       "sell",
+        "size":       size,
+        "limitPrice": price,
     })
-    status = result.get("sendStatus", {}).get("status", "?")
+    status   = result.get("sendStatus", {}).get("status", "?")
     order_id = result.get("sendStatus", {}).get("order_id", "?")
     return status, order_id
 
