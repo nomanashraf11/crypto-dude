@@ -159,12 +159,15 @@ def add_tp(price_arg, size_pct):
     status, order_id = place_tp(cache["symbol"], size, price)
     print(f"✅ TP added  ${price}  size={size}  |  {status}  id={order_id}")
 
-def edit(order_id, size, new_price):
-    result = api("POST", "/derivatives/api/v3/editorder", {
+def edit(order_id, size, new_price, limit_price=None):
+    data = {
         "orderId":   order_id,
         "size":      size,
         "stopPrice": new_price,
-    })
+    }
+    if limit_price is not None:
+        data["limitPrice"] = limit_price
+    result = api("POST", "/derivatives/api/v3/editorder", data)
     return result.get("editStatus", {}).get("status", "?")
 
 def update_tp(arg, size_pct=None):
@@ -175,7 +178,7 @@ def update_tp(arg, size_pct=None):
     if size_pct is not None:
         size = round(size * size_pct / 100, 8)
         print(f"  Partial TP: {size_pct}% of position = {size} ETH")
-    status   = edit(cache["tp_id"], size, new)
+    status   = edit(cache["tp_id"], size, new, limit_price=new)
     cache["tp_price"] = new
     save_cache(cache)
     print(f"✅ TP  ${old} → ${new}  |  {status}")
