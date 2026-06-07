@@ -1,30 +1,16 @@
 [
   {
-    "coin": "ENA",
-    "symbol": "ENAUSDT",
-    "price": 0.099,
-    "direction": "above",
-    "note": "ENA approaching $0.100 resistance — validate short setup before entering"
-  },
-  {
-    "coin": "ETH",
-    "symbol": "ETHUSDT",
-    "price": 1550,
+    "coin": "BTC",
+    "symbol": "BTCUSDT",
+    "price": 61800,
     "direction": "below",
-    "note": "ETH pulling back toward entry — price dropping. Exit manually NOW to lock profit. Don't let winner turn to loser."
+    "note": "BTC PULLBACK to long entry zone ($61,500-61,800). Daily oversold bounce thesis. WAIT for 15m candle CLOSE above 61,500 + check long liqs not firing before entering. Ask Claude to re-pull liq data first."
   },
   {
-    "coin": "ETH",
-    "symbol": "ETHUSDT",
-    "price": 1488,
-    "direction": "below",
-    "note": "ETH SL HIT — exit immediately. Trade over."
-  },
-  {
-    "coin": "ETH",
-    "symbol": "ETHUSDT",
-    "price": 1620,
+    "coin": "BTC",
+    "symbol": "BTCUSDT",
+    "price": 63050,
     "direction": "above",
-    "note": "ETH TP HIT at $1,620 — EXIT 80% NOW. 20% stays open for higher. Kraken auto-closes 2.2 ETH."
+    "note": "BTC BREAKOUT above $63,000. Do NOT chase the candle. Wait for RETEST of 63,000 holding from above, then long. Counter-trend = take TP1 fast, trail rest. Ask Claude to confirm volume + liqs."
   }
 ]
