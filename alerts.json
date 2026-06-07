@@ -2,9 +2,9 @@
   {
     "coin": "BTC",
     "symbol": "BTCUSDT",
-    "price": 61800,
+    "price": 60500,
     "direction": "below",
-    "note": "BTC PULLBACK to long entry zone ($61,500-61,800). Daily oversold bounce thesis. WAIT for 15m candle CLOSE above 61,500 + check long liqs not firing before entering. Ask Claude to re-pull liq data first."
+    "note": "BTC cascade-complete watch ($60,400-60,600 = 24h low + 1H BB lower). DO NOT enter on touch. Wait for 15m candle lower-wick CLOSE above wick low + long liqs STOP firing + taker recovers >1.0. Ask Claude to re-pull liqs FIRST. This is the ENA-mistake guard."
   },
   {
     "coin": "BTC",
@@ -12,5 +12,12 @@
     "price": 63050,
     "direction": "above",
     "note": "BTC BREAKOUT above $63,000. Do NOT chase the candle. Wait for RETEST of 63,000 holding from above, then long. Counter-trend = take TP1 fast, trail rest. Ask Claude to confirm volume + liqs."
+  },
+  {
+    "coin": "HYPE",
+    "symbol": "HYPEUSDT",
+    "price": 53,
+    "direction": "below",
+    "note": "HYPE spot hold (entry $70). $53 = daily EMA50 cut line. If daily CLOSES below 53, pullback deepening — reduce to protect. Above 53 = trend intact, hold."
   }
 ]
