@@ -23,15 +23,8 @@
   {
     "coin": "ETH",
     "symbol": "ETHUSDT",
-    "price": 1590,
+    "price": 1620,
     "direction": "above",
-    "note": "ETH TP HIT at $1,590 — EXIT FULL POSITION NOW. Short squeeze peak. Don't wait."
-  },
-  {
-    "coin": "ETH",
-    "symbol": "ETHUSDT",
-    "price": 1582,
-    "direction": "above",
-    "note": "ETH hit bearish OB at $1,582–$1,601 — WATCH NOW. If rejected with big wick, EXIT and take profit. If closes above $1,601, OB failed, hold to $1,620 TP."
+    "note": "ETH TP HIT at $1,620 — EXIT 80% NOW. 20% stays open for higher. Kraken auto-closes 2.2 ETH."
   }
 ]

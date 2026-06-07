@@ -145,11 +145,15 @@ def edit(order_id, size, new_price):
     })
     return result.get("editStatus", {}).get("status", "?")
 
-def update_tp(arg):
+def update_tp(arg, size_pct=None):
     cache    = get_cache()
     old      = cache["tp_price"]
     new      = resolve_price(arg, old, "TP")
-    status   = edit(cache["tp_id"], cache["size"], new)
+    size     = cache["size"]
+    if size_pct is not None:
+        size = round(size * size_pct / 100, 8)
+        print(f"  Partial TP: {size_pct}% of position = {size} ETH")
+    status   = edit(cache["tp_id"], size, new)
     cache["tp_price"] = new
     save_cache(cache)
     print(f"✅ TP  ${old} → ${new}  |  {status}")
@@ -219,8 +223,9 @@ if __name__ == "__main__":
 
     if cmd == "orders":
         refresh_cache()
-    elif cmd == "tp" and len(args) == 2:
-        update_tp(args[1])
+    elif cmd == "tp" and len(args) >= 2:
+        pct = float(args[2].replace("%","")) if len(args) == 3 and "%" in args[2] else None
+        update_tp(args[1], size_pct=pct)
     elif cmd == "sl" and len(args) == 1:
         print(__doc__)
     elif cmd == "sl" and len(args) >= 2:
