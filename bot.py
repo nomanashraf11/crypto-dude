@@ -5,10 +5,12 @@ import os
 from datetime import datetime
 
 # ─── CONFIG ───────────────────────────────────────────
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-CHAT_ID        = os.environ.get("CHAT_ID")
-ALERTS_FILE    = os.environ.get("ALERTS_FILE", "alerts.json")
-CHECK_INTERVAL = int(os.environ.get("CHECK_INTERVAL", "60"))
+TELEGRAM_TOKEN   = os.environ.get("TELEGRAM_TOKEN")
+CHAT_ID          = os.environ.get("CHAT_ID")
+PUSHOVER_TOKEN   = os.environ.get("PUSHOVER_TOKEN")
+PUSHOVER_USER    = os.environ.get("PUSHOVER_USER")
+ALERTS_FILE      = os.environ.get("ALERTS_FILE", "alerts.json")
+CHECK_INTERVAL   = int(os.environ.get("CHECK_INTERVAL", "60"))
 # ──────────────────────────────────────────────────────
 
 def get_price(symbol):
@@ -54,6 +56,21 @@ def get_price(symbol):
 
     raise Exception(f"All sources failed for {symbol}")
 
+def send_pushover(title, message, priority=1):
+    if not PUSHOVER_TOKEN or not PUSHOVER_USER:
+        return
+    try:
+        requests.post("https://api.pushover.net/1/messages.json", data={
+            "token":    PUSHOVER_TOKEN,
+            "user":     PUSHOVER_USER,
+            "title":    title,
+            "message":  message,
+            "priority": priority,  # 1 = high priority (bypasses quiet hours), 2 = requires ack
+            "sound":    "siren",
+        }, timeout=10)
+    except Exception as e:
+        print(f"Pushover error: {e}")
+
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     requests.post(url, json={
@@ -95,6 +112,10 @@ def check_alerts():
                     f"👉 Ask Claude to analyze before entering!"
                 )
                 send_telegram(msg)
+                send_pushover(
+                    title=f"{'📉' if alert['direction'] == 'below' else '📈'} {alert['coin']} ALERT",
+                    message=f"${price:,.2f} hit {alert['direction']} ${alert['price']:,}\n\n{alert['note']}"
+                )
                 print(f"✅ Alert sent: {alert['coin']} @ ${price:,.2f}")
                 triggered.append(alert)
 
@@ -138,6 +159,11 @@ def main():
             f"Monitoring {len(load_alerts())} alert(s)\n"
             f"Interval: every {CHECK_INTERVAL}s\n\n"
             f"I will ping you when price hits your level 🎯"
+        )
+        send_pushover(
+            title="Crypto Alert Bot Online",
+            message=f"Monitoring {len(load_alerts())} alert(s). Will ring when price hits.",
+            priority=0
         )
     except Exception as e:
         print(f"Startup message failed: {e}")
