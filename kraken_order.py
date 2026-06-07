@@ -17,6 +17,22 @@ COMMANDS:
   sl trail 2%      — SL to current price - 2% (percentage buffer)
   sl trail 50      — SL to current price - $50 (absolute, use only if you know the coin)
 
+HOW TP/SL WORKS (no more slippage):
+  TP uses take_profit order with:
+    stopPrice  = your target (trigger)
+    limitPrice = stopPrice - 0.1% (floor, ensures fill, prevents bad fill)
+    triggerSignal = mark (prevents wick triggers on last price)
+    reduceOnly = true (never opens new position by accident)
+
+  SL uses stop_market (stp, no limitPrice):
+    stopPrice = your stop level
+    triggerSignal = mark
+    reduceOnly = true
+    NO limitPrice = guaranteed market fill, never stuck unfilled
+
+  ALWAYS edit both stopPrice + limitPrice together — editing only
+  one leaves the other at the old value = bad fill (this was the $1,606 bug)
+
 EXAMPLES during trade:
   sl be            — trade now risk free
   sl trail         — ride the move, auto-close on reversal
@@ -25,8 +41,9 @@ EXAMPLES during trade:
 
 import sys, time, hashlib, hmac, base64, json, urllib.request, urllib.parse, subprocess
 
-CACHE_FILE    = "/tmp/kraken_cache.json"
-TRAIL_DEFAULT_PCT = 1.5  # default trailing buffer = 1.5% of current price
+CACHE_FILE        = "/tmp/kraken_cache.json"
+TRAIL_DEFAULT_PCT = 1.5   # default trailing buffer = 1.5% of current price
+TP_LIMIT_BUFFER   = 0.001 # 0.1% below stopPrice for limitPrice on TP orders
 
 def keychain_get(key_name):
     r = subprocess.run(
@@ -61,6 +78,10 @@ def api(method, endpoint, data=None):
         req = urllib.request.Request(url, data=post_data.encode(), headers=headers, method="POST")
     with urllib.request.urlopen(req, timeout=10) as r:
         return json.load(r)
+
+def tp_limit_price(stop_price):
+    """0.1% below stopPrice — floor that ensures fill without bad slippage."""
+    return round(stop_price * (1 - TP_LIMIT_BUFFER), 2)
 
 def current_price(symbol):
     coin = symbol.replace("PF_", "").replace("PI_", "").replace("USD", "")
@@ -101,7 +122,7 @@ def refresh_cache(silent=False):
         if "take_profit" in ot:
             cache["tp_id"]    = o["order_id"]
             cache["tp_price"] = o.get("stopPrice")
-        elif "stop" in ot:
+        elif "stop" in ot or ot == "stp":
             cache["sl_id"]    = o["order_id"]
             cache["sl_price"] = o.get("stopPrice")
         if not cache["symbol"]:
@@ -138,47 +159,63 @@ def resolve_price(arg, current, label):
     else:
         return float(arg)
 
-def place_tp(symbol, size, price):
-    """Place a limit sell order at TP price (closes portion of long position)."""
-    result = api("POST", "/derivatives/api/v3/sendorder", {
-        "orderType":  "lmt",
-        "symbol":     symbol,
-        "side":       "sell",
+def edit_tp(order_id, size, stop_price):
+    """Edit TP order — always sends BOTH stopPrice and limitPrice together."""
+    limit = tp_limit_price(stop_price)
+    result = api("POST", "/derivatives/api/v3/editorder", {
+        "orderId":    order_id,
         "size":       size,
-        "limitPrice": price,
+        "stopPrice":  stop_price,
+        "limitPrice": limit,
+    })
+    status = result.get("editStatus", {}).get("status", "?")
+    print(f"  stopPrice=${stop_price}  limitPrice=${limit}  (0.1% floor)")
+    return status
+
+def edit_sl(order_id, size, stop_price):
+    """Edit SL order — stop-market, no limitPrice = guaranteed fill."""
+    result = api("POST", "/derivatives/api/v3/editorder", {
+        "orderId":    order_id,
+        "size":       size,
+        "stopPrice":  stop_price,
+    })
+    return result.get("editStatus", {}).get("status", "?")
+
+def place_tp(symbol, size, stop_price):
+    """Place a new take_profit order with mark trigger and 0.1% limit floor."""
+    limit = tp_limit_price(stop_price)
+    result = api("POST", "/derivatives/api/v3/sendorder", {
+        "orderType":     "take_profit",
+        "symbol":        symbol,
+        "side":          "sell",
+        "size":          size,
+        "stopPrice":     stop_price,
+        "limitPrice":    limit,
+        "triggerSignal": "mark",
+        "reduceOnly":    True,
     })
     status   = result.get("sendStatus", {}).get("status", "?")
     order_id = result.get("sendStatus", {}).get("order_id", "?")
+    print(f"  stopPrice=${stop_price}  limitPrice=${limit}  (0.1% floor)")
     return status, order_id
 
 def add_tp(price_arg, size_pct):
     cache  = get_cache()
-    price  = resolve_price(price_arg, cache["tp_price"], "TP2")
+    price  = resolve_price(price_arg, cache["tp_price"] or 0, "TP2")
     size   = round(cache["size"] * size_pct / 100, 8)
     print(f"  Adding TP at ${price} for {size_pct}% = {size} ETH")
     status, order_id = place_tp(cache["symbol"], size, price)
     print(f"✅ TP added  ${price}  size={size}  |  {status}  id={order_id}")
 
-def edit(order_id, size, new_price, limit_price=None):
-    data = {
-        "orderId":   order_id,
-        "size":      size,
-        "stopPrice": new_price,
-    }
-    if limit_price is not None:
-        data["limitPrice"] = limit_price
-    result = api("POST", "/derivatives/api/v3/editorder", data)
-    return result.get("editStatus", {}).get("status", "?")
-
 def update_tp(arg, size_pct=None):
-    cache    = get_cache()
-    old      = cache["tp_price"]
-    new      = resolve_price(arg, old, "TP")
-    size     = cache["size"]
+    cache = get_cache()
+    old   = cache["tp_price"]
+    new   = resolve_price(arg, old, "TP")
+    size  = cache["size"]
     if size_pct is not None:
         size = round(size * size_pct / 100, 8)
         print(f"  Partial TP: {size_pct}% of position = {size} ETH")
-    status   = edit(cache["tp_id"], size, new, limit_price=new)
+    status = edit_tp(cache["tp_id"], size, new)
     cache["tp_price"] = new
     save_cache(cache)
     print(f"✅ TP  ${old} → ${new}  |  {status}")
@@ -191,19 +228,12 @@ def update_sl(arg):
         new = cache["entry"]
     elif arg == "be+":
         new = round(cache["entry"] + 5, 2)
-    elif arg == "trail" or (arg.startswith("trail") and len(arg.split()) == 1):
-        price = current_price(symbol)
-        if not price:
-            print("❌ Could not fetch current price")
-            return
-        new = round(price - TRAIL_DEFAULT, 2)
-        print(f"  Current price: ${price} | Trail buffer: ${TRAIL_DEFAULT}")
     else:
         old = cache["sl_price"]
         new = resolve_price(arg, old, "SL")
 
     old    = cache["sl_price"]
-    status = edit(cache["sl_id"], cache["size"], new)
+    status = edit_sl(cache["sl_id"], cache["size"], new)
     cache["sl_price"] = new
     save_cache(cache)
     print(f"✅ SL  ${old} → ${new}  |  {status}")
@@ -216,7 +246,6 @@ def update_sl_trail(arg=None):
         print("❌ Could not fetch current price")
         return
 
-    # parse arg: "2%" = percentage, "50" = absolute, None = default %
     if arg is None:
         buffer = round(price * TRAIL_DEFAULT_PCT / 100, 8)
         label  = f"{TRAIL_DEFAULT_PCT}%"
@@ -231,7 +260,7 @@ def update_sl_trail(arg=None):
     new    = round(price - buffer, 8)
     old    = cache["sl_price"]
     print(f"  Mark price: ${price} | Buffer: {label} = ${buffer:.6g}")
-    status = edit(cache["sl_id"], cache["size"], new)
+    status = edit_sl(cache["sl_id"], cache["size"], new)
     if status != "invalidPrice":
         cache["sl_price"] = new
         save_cache(cache)
@@ -250,7 +279,6 @@ if __name__ == "__main__":
         refresh_cache()
     elif cmd == "tp" and len(args) >= 2:
         if args[1].lower() == "add" and len(args) == 4:
-            # tp add 1650 20%
             pct = float(args[3].replace("%",""))
             add_tp(args[2], pct)
         else:
