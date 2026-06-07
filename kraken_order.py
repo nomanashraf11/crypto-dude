@@ -5,6 +5,7 @@ Kraken Futures — fast TP/SL updater
 COMMANDS:
   orders           — refresh cache, show position
   tp 1590          — set TP to exact price
+  tp add 1650 20%  — add second TP at $1,650 for 20% of position
   sl 1488          — set SL to exact price
   tp +50           — move TP up by $50
   sl +30           — move SL up by $30 (tighten)
@@ -137,6 +138,28 @@ def resolve_price(arg, current, label):
     else:
         return float(arg)
 
+def place_tp(symbol, size, price):
+    """Place a new take-profit-market order (for additional TP levels)."""
+    result = api("POST", "/derivatives/api/v3/sendorder", {
+        "orderType": "take_profit_market",
+        "symbol":    symbol,
+        "side":      "sell",
+        "size":      size,
+        "stopPrice": price,
+        "triggerSignal": "mark",
+    })
+    status = result.get("sendStatus", {}).get("status", "?")
+    order_id = result.get("sendStatus", {}).get("order_id", "?")
+    return status, order_id
+
+def add_tp(price_arg, size_pct):
+    cache  = get_cache()
+    price  = resolve_price(price_arg, cache["tp_price"], "TP2")
+    size   = round(cache["size"] * size_pct / 100, 8)
+    print(f"  Adding TP at ${price} for {size_pct}% = {size} ETH")
+    status, order_id = place_tp(cache["symbol"], size, price)
+    print(f"✅ TP added  ${price}  size={size}  |  {status}  id={order_id}")
+
 def edit(order_id, size, new_price):
     result = api("POST", "/derivatives/api/v3/editorder", {
         "orderId":   order_id,
@@ -224,8 +247,13 @@ if __name__ == "__main__":
     if cmd == "orders":
         refresh_cache()
     elif cmd == "tp" and len(args) >= 2:
-        pct = float(args[2].replace("%","")) if len(args) == 3 and "%" in args[2] else None
-        update_tp(args[1], size_pct=pct)
+        if args[1].lower() == "add" and len(args) == 4:
+            # tp add 1650 20%
+            pct = float(args[3].replace("%",""))
+            add_tp(args[2], pct)
+        else:
+            pct = float(args[2].replace("%","")) if len(args) == 3 and "%" in args[2] else None
+            update_tp(args[1], size_pct=pct)
     elif cmd == "sl" and len(args) == 1:
         print(__doc__)
     elif cmd == "sl" and len(args) >= 2:
