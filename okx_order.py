@@ -18,9 +18,14 @@ COMMANDS:
   sl -1%              — move SL down 1%
   sl be               — SL to breakeven (entry price)
   sl be+              — SL to entry + $5
-  sl trail 3%         — trailing stop: SL follows price, 3% behind peak
-  sl trail 50         — trailing stop: $50 behind peak (absolute)
-  sl trail            — trailing stop: 1.5% behind peak (default)
+  sl trail 3%         — trailing stop AUTO-follows peak, fills MARKET (slippage = book)
+  sl trail 50         — trailing stop: $50 behind peak (absolute), MARKET fill
+  sl trail            — trailing stop: 1.5% behind peak (default), MARKET fill
+  sl trail 3% limit   — STOP-LIMIT trail: caps slippage 0.3%, MANUAL (re-run as price climbs)
+
+  MARKET trail = native auto-follow, always fills at whatever the book offers
+  LIMIT  trail = caps exit price (0.3% floor), but can MISS on a gap + must re-run
+  (OKX's regular 'sl <price>' and 'oco' are ALREADY stop-limit / capped slippage.)
 
 OCO = One-Cancels-Other: TP + SL in one order.
   When TP fires → SL auto-cancelled. When SL fires → TP auto-cancelled.
@@ -543,39 +548,58 @@ def cmd_update_sl(arg):
     save_cache(cache)
     print(f"✅ SL  ${old} → ${new}  |  {status}")
 
-def cmd_trail_sl(arg=None):
+def cmd_trail_sl(arg=None, use_limit=False):
     cache = get_cache()
     if not cache.get("inst_id"):
         print("❌ No open position. Use 'enter' to open a trade first.")
         return
     close_side = cache["close_side"]
 
-    # Cancel existing trail if any
+    # parse buffer → ratio (percent) or spread (absolute)
+    if arg is None:
+        ratio, spread, label = TRAIL_DEFAULT_PCT / 100, None, f"{TRAIL_DEFAULT_PCT}%"
+    elif str(arg).endswith("%"):
+        pct = float(str(arg)[:-1]); ratio, spread, label = pct / 100, None, f"{pct}%"
+    else:
+        ratio, spread, label = None, float(arg), f"${float(arg)}"
+
+    # ── LIMIT trail (manual, caps slippage) ──────────────────────────────
+    # OKX's native trailing stop only fills at MARKET. To cap slippage we park the
+    # regular conditional stop-LIMIT (slOrdPx 0.3% floor) at price−buffer and re-run
+    # it as price moves. Caps slippage, but can MISS on a gap. Best for winners.
+    if use_limit:
+        price = current_price(cache["inst_id"])
+        if not price:
+            print("❌ Could not fetch current price"); return
+        buf = price * ratio if ratio is not None else spread
+        new = round(price - buf if close_side == "sell" else price + buf, _price_decimals(price))
+        if cache.get("trail_id"):                       # drop any native trail first
+            cancel_algo(cache["inst_id"], cache["trail_id"]); cache["trail_id"] = None
+        if cache.get("oco_id"):
+            status = edit_oco(cache["oco_id"], cache["inst_id"], close_side, sl_price=new)
+        elif cache.get("sl_id"):
+            status = edit_sl_order(cache["sl_id"], cache["inst_id"], new, close_side)
+        else:
+            status, sid = place_sl(cache["inst_id"], cache["size_contracts"], new, close_side)
+            cache["sl_id"] = sid
+        cache["sl_price"] = new
+        save_cache(cache)
+        print(f"✅ Trail STOP-LIMIT → ${new}  (buffer {label})  |  {status}")
+        print(f"   Caps slippage (0.3% floor). MANUAL — re-run as price climbs. Can miss on a gap.")
+        return
+
+    # ── MARKET trail (native auto-follow) ────────────────────────────────
     if cache.get("trail_id"):
         cancel_algo(cache["inst_id"], cache["trail_id"])
         print(f"  Cancelled old trail: {cache['trail_id']}")
-
-    if arg is None:
-        ratio = TRAIL_DEFAULT_PCT / 100
-        label = f"{TRAIL_DEFAULT_PCT}%"
-        status, algo_id = place_trailing_sl(cache["inst_id"], cache["size_contracts"],
-                                            close_side, callback_ratio=ratio)
-    elif str(arg).endswith("%"):
-        pct   = float(str(arg)[:-1])
-        ratio = pct / 100
-        label = f"{pct}%"
-        status, algo_id = place_trailing_sl(cache["inst_id"], cache["size_contracts"],
-                                            close_side, callback_ratio=ratio)
+    if ratio is not None:
+        status, algo_id = place_trailing_sl(cache["inst_id"], cache["size_contracts"], close_side, callback_ratio=ratio)
     else:
-        spread = float(arg)
-        label  = f"${spread}"
-        status, algo_id = place_trailing_sl(cache["inst_id"], cache["size_contracts"],
-                                            close_side, callback_spread=spread)
-
+        status, algo_id = place_trailing_sl(cache["inst_id"], cache["size_contracts"], close_side, callback_spread=spread)
     cache.update({"trail_id": algo_id})
     save_cache(cache)
-    print(f"✅ Trailing SL  callback={label}  |  {status}  id={algo_id}")
-    print(f"   OKX will track price peak and fire market sell if it drops {label}")
+    print(f"✅ Trailing SL (auto, MARKET fill)  callback={label}  |  {status}  id={algo_id}")
+    print(f"   OKX tracks the peak and fires a MARKET sell if price drops {label}")
 
 def cmd_enter(coin, side, size_coins, entry_price, tp_price, sl_price):
     """
@@ -672,11 +696,14 @@ if __name__ == "__main__":
             pct = float(args[2].replace("%", "")) if len(args) == 3 and "%" in args[2] else None
             cmd_update_tp(args[1], size_pct=pct)
     elif cmd == "sl" and len(args) >= 2:
-        val = args[1].lower()
+        rest      = [a.lower() for a in args[1:]]
+        use_limit = "limit" in rest
+        rest      = [a for a in rest if a != "limit"]   # strip the 'limit' keyword
+        val       = rest[0]
         if val.startswith("trail"):
-            buf = args[2] if len(args) == 3 else None
-            cmd_trail_sl(buf)
+            buf = rest[1] if len(rest) >= 2 else None
+            cmd_trail_sl(buf, use_limit=use_limit)
         else:
-            cmd_update_sl(val)
+            cmd_update_sl(val)   # OKX regular SL is already stop-limit (0.3% floor)
     else:
         print(__doc__)

@@ -13,9 +13,15 @@ COMMANDS:
   sl -1%           — move SL down by 1%
   sl be            — SL to breakeven (entry price)
   sl be+           — SL to entry + $5 (just above breakeven, locks small profit)
-  sl trail         — SL to current price - 1.5% (smart default, scales with coin price)
+  sl trail         — SL to current price - 1.5% (stop-MARKET: always fills, slippage = book)
   sl trail 2%      — SL to current price - 2% (percentage buffer)
   sl trail 50      — SL to current price - $50 (absolute, use only if you know the coin)
+  sl trail 2% limit— STOP-LIMIT trail: caps slippage at 0.3% floor (can MISS on a gap)
+  sl 0.47 limit    — fixed STOP-LIMIT at $0.47 (capped slippage instead of market)
+
+  MARKET vs LIMIT stop:
+    market = always fills, but at whatever the book offers (catastrophe stops)
+    limit  = caps your exit price, but can MISS in a fast gap (protecting a winner)
 
 HOW TP/SL WORKS (no more slippage):
   TP uses take_profit order with:
@@ -44,6 +50,7 @@ import sys, time, hashlib, hmac, base64, json, urllib.request, urllib.parse, sub
 CACHE_FILE        = "/tmp/kraken_cache.json"
 TRAIL_DEFAULT_PCT = 1.5   # default trailing buffer = 1.5% of current price
 TP_LIMIT_BUFFER   = 0.001 # 0.1% below stopPrice for limitPrice on TP orders
+SL_LIMIT_BUFFER   = 0.003 # 0.3% below stopPrice for stop-LIMIT trails (caps slippage)
 
 def keychain_get(key_name):
     r = subprocess.run(
@@ -92,6 +99,10 @@ def _price_decimals(price):
 def tp_limit_price(stop_price):
     """0.1% below stopPrice — floor that ensures fill without bad slippage."""
     return round(stop_price * (1 - TP_LIMIT_BUFFER), _price_decimals(stop_price))
+
+def sl_limit_price(stop_price):
+    """0.3% below stopPrice — floor for a STOP-LIMIT SL (caps slippage, can miss on a gap)."""
+    return round(stop_price * (1 - SL_LIMIT_BUFFER), _price_decimals(stop_price))
 
 def current_price(symbol):
     coin = symbol.replace("PF_", "").replace("PI_", "").replace("USD", "")
@@ -183,7 +194,7 @@ def edit_tp(order_id, size, stop_price):
     return status
 
 def edit_sl(order_id, size, stop_price):
-    """Edit SL order — stop-market, no limitPrice = guaranteed fill."""
+    """Edit SL order — stop-MARKET, no limitPrice = guaranteed fill (slippage = whatever's available)."""
     result = api("POST", "/derivatives/api/v3/editorder", {
         "orderId":       order_id,
         "size":          size,
@@ -191,6 +202,21 @@ def edit_sl(order_id, size, stop_price):
         "triggerSignal": "mark",
         "reduceOnly":    True,
     })
+    return result.get("editStatus", {}).get("status", "?")
+
+def edit_sl_limit(order_id, size, stop_price):
+    """Edit SL as a STOP-LIMIT — caps slippage at 0.3% floor, but CAN MISS in a fast gap.
+    Use for protecting profit on a winner; never for a catastrophe stop."""
+    limit = sl_limit_price(stop_price)
+    result = api("POST", "/derivatives/api/v3/editorder", {
+        "orderId":       order_id,
+        "size":          size,
+        "stopPrice":     stop_price,
+        "limitPrice":    limit,
+        "triggerSignal": "mark",
+        "reduceOnly":    True,
+    })
+    print(f"  stopPrice=${stop_price}  limitPrice=${limit}  (stop-LIMIT, 0.3% floor — caps slippage, can miss)")
     return result.get("editStatus", {}).get("status", "?")
 
 def place_tp(symbol, size, stop_price):
@@ -232,7 +258,7 @@ def update_tp(arg, size_pct=None):
     save_cache(cache)
     print(f"✅ TP  ${old} → ${new}  |  {status}")
 
-def update_sl(arg):
+def update_sl(arg, use_limit=False):
     cache  = get_cache()
     symbol = cache["symbol"]
 
@@ -245,12 +271,14 @@ def update_sl(arg):
         new = resolve_price(arg, old, "SL")
 
     old    = cache["sl_price"]
-    status = edit_sl(cache["sl_id"], cache["size"], new)
+    fn     = edit_sl_limit if use_limit else edit_sl
+    status = fn(cache["sl_id"], cache["size"], new)
     cache["sl_price"] = new
     save_cache(cache)
-    print(f"✅ SL  ${old} → ${new}  |  {status}")
+    kind = "stop-LIMIT" if use_limit else "stop-market"
+    print(f"✅ SL  ${old} → ${new}  ({kind})  |  {status}")
 
-def update_sl_trail(arg=None):
+def update_sl_trail(arg=None, use_limit=False):
     cache  = get_cache()
     symbol = cache["symbol"]
     price  = current_price(symbol)
@@ -269,10 +297,12 @@ def update_sl_trail(arg=None):
         buffer = float(arg)
         label  = f"${buffer}"
 
-    new    = round(price - buffer, 8)
+    new    = round(price - buffer, _price_decimals(price))
     old    = cache["sl_price"]
-    print(f"  Mark price: ${price} | Buffer: {label} = ${buffer:.6g}")
-    status = edit_sl(cache["sl_id"], cache["size"], new)
+    kind   = "stop-LIMIT (caps slippage, can miss)" if use_limit else "stop-MARKET (always fills, slippage = book)"
+    print(f"  Mark: ${price} | Buffer: {label} | New stop: ${new}  [{kind}]")
+    fn     = edit_sl_limit if use_limit else edit_sl
+    status = fn(cache["sl_id"], cache["size"], new)
     if status != "invalidPrice":
         cache["sl_price"] = new
         save_cache(cache)
@@ -299,11 +329,14 @@ if __name__ == "__main__":
     elif cmd == "sl" and len(args) == 1:
         print(__doc__)
     elif cmd == "sl" and len(args) >= 2:
-        val = args[1].lower()
+        rest      = [a.lower() for a in args[1:]]
+        use_limit = "limit" in rest
+        rest      = [a for a in rest if a != "limit"]   # strip the 'limit' keyword
+        val       = rest[0]
         if val.startswith("trail"):
-            buf = args[2] if len(args) == 3 else None
-            update_sl_trail(buf)
+            buf = rest[1] if len(rest) >= 2 else None
+            update_sl_trail(buf, use_limit=use_limit)
         else:
-            update_sl(val)
+            update_sl(val, use_limit=use_limit)
     else:
         print(__doc__)

@@ -272,6 +272,22 @@ POST /api/v5/trade/order
 
 ---
 
+## SHARED RULE — MARKET vs LIMIT stops (slippage vs fill-certainty)
+
+A market stop does **not** mean "small slippage" — it fills at **whatever the order book offers** at that instant, capped only by the exchange collar (Kraken ~1%). In a fast/thin move (exactly when stops fire) that can be a real bite. So choose the stop type by the stop's **job**:
+
+| Stop's job | Use | Why |
+|---|---|---|
+| **Catastrophe SL** (escape a real breakdown) | stop-**MARKET** | You MUST get out — fill-certainty beats price. Eat the slippage. |
+| **Profit-lock trail** (protect gains on a winner) | stop-**LIMIT** (0.3% floor) | Cap the exit price. Worst case it MISSES → you're still green and manage manually. |
+
+- **Never use a limit for a catastrophe stop** — a gap blows through it and you ride the crash unfilled.
+- **A limit stop CAN miss** in a fast gap. That's the deliberate cost of capping slippage — acceptable only when a miss leaves you in profit.
+- Commands: `sl trail 2% limit` (capped trail) · `sl 0.47 limit` (Kraken fixed stop-limit). OKX's regular `sl`/`oco` are already stop-limit; only its native `sl trail` (no `limit`) is market.
+- Kraken's `sl trail` is MANUAL (re-run as price climbs); OKX's market trail auto-follows. The `limit` trail is manual on both.
+
+---
+
 ## OKX QUICK REFERENCE
 
 ```
