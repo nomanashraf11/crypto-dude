@@ -4,34 +4,41 @@
     "symbol": "BTCUSDT",
     "price": 60500,
     "direction": "below",
-    "note": "BTC cascade-complete watch ($60,400-60,600 = 24h low + 1H BB lower). DO NOT enter on touch. Wait for 15m candle lower-wick CLOSE above wick low + long liqs STOP firing + taker recovers >1.0. Ask Claude to re-pull liqs FIRST. This is the ENA-mistake guard."
+    "note": "BTC cascade-complete watch. DO NOT enter on touch — wait for 15m candle CLOSE + liqs stop firing. Ask Claude to re-pull liqs first."
   },
   {
     "coin": "BTC",
     "symbol": "BTCUSDT",
     "price": 63050,
     "direction": "above",
-    "note": "BTC BREAKOUT above $63,000. Do NOT chase the candle. Wait for RETEST of 63,000 holding from above, then long. Counter-trend = take TP1 fast, trail rest. Ask Claude to confirm volume + liqs."
+    "note": "BTC BREAKOUT above $63,000. Wait for retest, don't chase. Ask Claude to confirm."
   },
   {
     "coin": "HYPE",
     "symbol": "HYPEUSDT",
     "price": 53,
     "direction": "below",
-    "note": "HYPE spot hold (entry $70). $53 = daily EMA50 cut line. If daily CLOSES below 53, pullback deepening — reduce to protect. Above 53 = trend intact, hold."
+    "note": "HYPE spot hold (entry $70). $53 = daily EMA50 cut line. Below = reduce. Above = hold."
   },
   {
-    "coin": "WLD",
-    "symbol": "WLDUSDT",
-    "price": 0.4644,
+    "coin": "PENGU",
+    "symbol": "PENGUUSDT",
+    "price": 0.006497,
     "direction": "below",
-    "note": "WLD LONG (Kraken, entry 0.4701). $0.4644 = demand line that held TWICE. Break below = bounce failing. SL still protects at 0.4485. Ask Claude to recheck before acting."
+    "note": "PENGU pullback long L1 (friend's level). Mediocre R:R (1.5:1, deep stop). Prefer the floor 0.006040. Ask Claude to recheck structure before entering — don't market-buy on touch."
   },
   {
-    "coin": "WLD",
-    "symbol": "WLDUSDT",
-    "price": 0.497,
+    "coin": "PENGU",
+    "symbol": "PENGUUSDT",
+    "price": 0.00604,
+    "direction": "below",
+    "note": "PENGU FLOOR long (the good one). Entry ~0.006040, SL 0.00575 (below 0.00583 bottom), TP 0.00705/0.0076. ~5:1 R:R, tight stop. Size for euro60-80 risk = euro1250-1660 position. NOT 2x all-in. Ask Claude to confirm base holding + no cascade."
+  },
+  {
+    "coin": "PENGU",
+    "symbol": "PENGUUSDT",
+    "price": 0.00708,
     "direction": "above",
-    "note": "WLD approaching TP $0.498 — Kraken auto-fills 80% (+$330). After fill: move SL to breakeven (sl be) for the 20% runner."
+    "note": "PENGU BREAKOUT above 0.00705 neckline = CHOCH, reversal confirmed. Long the RETEST (not the candle), SL under 0.00665. Target 0.0076/0.0080. This is the A+ version."
   }
 ]
