@@ -79,9 +79,19 @@ def api(method, endpoint, data=None):
     with urllib.request.urlopen(req, timeout=10) as r:
         return json.load(r)
 
+def _price_decimals(price):
+    """Decimals that preserve a 0.1% buffer at any price. 2 dp is fine for BTC/ETH
+    but destroys the buffer on sub-dollar coins (0.505 -> 0.50 not 0.5045)."""
+    p = abs(price)
+    if p >= 1000: return 1
+    if p >= 100:  return 2
+    if p >= 10:   return 3
+    if p >= 1:    return 4
+    return 5      # sub-dollar coins (WLD, ENA, DOGE...)
+
 def tp_limit_price(stop_price):
     """0.1% below stopPrice — floor that ensures fill without bad slippage."""
-    return round(stop_price * (1 - TP_LIMIT_BUFFER), 2)
+    return round(stop_price * (1 - TP_LIMIT_BUFFER), _price_decimals(stop_price))
 
 def current_price(symbol):
     coin = symbol.replace("PF_", "").replace("PI_", "").replace("USD", "")
