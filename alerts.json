@@ -19,5 +19,19 @@
     "price": 53,
     "direction": "below",
     "note": "HYPE spot hold (entry $70). $53 = daily EMA50 cut line. If daily CLOSES below 53, pullback deepening — reduce to protect. Above 53 = trend intact, hold."
+  },
+  {
+    "coin": "WLD",
+    "symbol": "WLDUSDT",
+    "price": 0.4644,
+    "direction": "below",
+    "note": "WLD LONG (Kraken, entry 0.4701). $0.4644 = demand line that held TWICE. Break below = bounce failing. SL still protects at 0.4485. Ask Claude to recheck before acting."
+  },
+  {
+    "coin": "WLD",
+    "symbol": "WLDUSDT",
+    "price": 0.497,
+    "direction": "above",
+    "note": "WLD approaching TP $0.498 — Kraken auto-fills 60% (+$248). After fill: move SL to breakeven (sl be) for the 40% runner."
   }
 ]
