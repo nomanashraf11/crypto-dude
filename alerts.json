@@ -1,19 +1,5 @@
 [
   {
-    "coin": "BTC",
-    "symbol": "BTCUSDT",
-    "price": 60500,
-    "direction": "below",
-    "note": "BTC cascade-complete watch. DO NOT enter on touch — wait for 15m candle CLOSE + liqs stop firing. Ask Claude to re-pull liqs first."
-  },
-  {
-    "coin": "BTC",
-    "symbol": "BTCUSDT",
-    "price": 63050,
-    "direction": "above",
-    "note": "BTC BREAKOUT above $63,000. Wait for retest, don't chase. Ask Claude to confirm."
-  },
-  {
     "coin": "HYPE",
     "symbol": "HYPEUSDT",
     "price": 53,
@@ -21,24 +7,31 @@
     "note": "HYPE spot hold (entry $70). $53 = daily EMA50 cut line. Below = reduce. Above = hold."
   },
   {
+    "coin": "WLD",
+    "symbol": "WLDUSDT",
+    "price": 0.4795,
+    "direction": "below",
+    "note": "WLD pullback to entry (broke out, ADX 28, lean bullish). If it dips here: recheck structure still bullish + no liq cascade BEFORE entering. SL 0.458, TP 0.5196/0.56. Don't chase, don't all-in. Ask Claude first."
+  },
+  {
     "coin": "PENGU",
     "symbol": "PENGUUSDT",
     "price": 0.006497,
     "direction": "below",
-    "note": "PENGU pullback long L1 (friend's level). Mediocre R:R (1.5:1, deep stop). Prefer the floor 0.006040. Ask Claude to recheck structure before entering — don't market-buy on touch."
+    "note": "PENGU pullback long L1. Mediocre R:R (deep stop). Prefer the floor 0.006040. Recheck before buying spot."
   },
   {
     "coin": "PENGU",
     "symbol": "PENGUUSDT",
     "price": 0.00604,
     "direction": "below",
-    "note": "PENGU FLOOR long (the good one). Entry ~0.006040, SL 0.00575 (below 0.00583 bottom), TP 0.00705/0.0076. ~5:1 R:R, tight stop. Size for euro60-80 risk = euro1250-1660 position. NOT 2x all-in. Ask Claude to confirm base holding + no cascade."
+    "note": "PENGU FLOOR (the good one). Spot buy zone, ~5:1. SL/cut-line 0.00575 (below 0.00583 bottom). Keep dry powder, don't all-in. Ask Claude to confirm base holding."
   },
   {
     "coin": "PENGU",
     "symbol": "PENGUUSDT",
     "price": 0.00708,
     "direction": "above",
-    "note": "PENGU BREAKOUT above 0.00705 neckline = CHOCH, reversal confirmed. Long the RETEST (not the candle), SL under 0.00665. Target 0.0076/0.0080. This is the A+ version."
+    "note": "PENGU BREAKOUT above 0.00705 = CHOCH/reversal confirmed. Long the retest, not the candle. Target 0.0076/0.0080. The A+ version."
   }
 ]
