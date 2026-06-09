@@ -1,5 +1,26 @@
 [
   {
+    "coin": "ENA",
+    "symbol": "ENAUSDT",
+    "price": 0.0893,
+    "direction": "above",
+    "note": "ENA LONG (Kraken, entry 0.0829). HIT R1 0.0893 → TAKE 50-60% PARTIAL (+$540) + move SL to BREAKEVEN on the rest. Counter-trend, don't get greedy for 0.094. Ask Claude to confirm momentum."
+  },
+  {
+    "coin": "ENA",
+    "symbol": "ENAUSDT",
+    "price": 0.0823,
+    "direction": "below",
+    "note": "ENA bounce level LOST (15m EMA/0.0823). If taker is selling + 15m rolling over = bounce broke → CLOSE the rest (save the scratch), don't ride to SL. Ask Claude to recheck first."
+  },
+  {
+    "coin": "BTC",
+    "symbol": "BTCUSDT",
+    "price": 61000,
+    "direction": "below",
+    "note": "BTC FLUSH to 61k = macro risk-off. Crowded-long alts (ENA 61% long) bleed in a BTC dump → TRIM/tighten ENA. Check all open longs."
+  },
+  {
     "coin": "HYPE",
     "symbol": "HYPEUSDT",
     "price": 53,
@@ -7,31 +28,24 @@
     "note": "HYPE spot hold (entry $70). $53 = daily EMA50 cut line. Below = reduce. Above = hold."
   },
   {
-    "coin": "WLD",
-    "symbol": "WLDUSDT",
-    "price": 0.4795,
-    "direction": "below",
-    "note": "WLD pullback to entry (broke out, ADX 28, lean bullish). If it dips here: recheck structure still bullish + no liq cascade BEFORE entering. SL 0.458, TP 0.5196/0.56. Don't chase, don't all-in. Ask Claude first."
-  },
-  {
     "coin": "PENGU",
     "symbol": "PENGUUSDT",
     "price": 0.006497,
     "direction": "below",
-    "note": "PENGU pullback long L1. Mediocre R:R (deep stop). Prefer the floor 0.006040. Recheck before buying spot."
+    "note": "PENGU L1 pullback long. Recheck before entering (futures). Stop at near structure ~0.00635, not the deep bottom."
   },
   {
     "coin": "PENGU",
     "symbol": "PENGUUSDT",
     "price": 0.00604,
     "direction": "below",
-    "note": "PENGU FLOOR (the good one). Spot buy zone, ~5:1. SL/cut-line 0.00575 (below 0.00583 bottom). Keep dry powder, don't all-in. Ask Claude to confirm base holding."
+    "note": "PENGU FLOOR (the good one), ~5:1. SL 0.00578. Scale-in add. Ask Claude to confirm base holding + BTC."
   },
   {
     "coin": "PENGU",
     "symbol": "PENGUUSDT",
     "price": 0.00708,
     "direction": "above",
-    "note": "PENGU BREAKOUT above 0.00705 = CHOCH/reversal confirmed. Long the retest, not the candle. Target 0.0076/0.0080. The A+ version."
+    "note": "PENGU BREAKOUT >0.00705 = reversal confirmed. Long the retest. Target 0.0076/0.0080."
   }
 ]
